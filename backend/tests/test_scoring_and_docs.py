@@ -54,6 +54,12 @@ def test_pdf_and_docx_roundtrip():
     assert pdf[:4] == b"%PDF" and len(docx) > 1000
     assert "Cut reporting time 40%" in documents.extract_text("r.pdf", pdf)
     assert "Jane Doe" in documents.extract_text("r.docx", docx)
+    from docx import Document
+    import io
+    rendered_doc = Document(io.BytesIO(docx))
+    assert rendered_doc.paragraphs[0].style.name == "Title"
+    assert rendered_doc.paragraphs[1].text == "jane@x.com · Remote"
+    assert rendered_doc.sections[0].top_margin.inches < 1
     assert documents.extract_text("r.txt", b"plain") == "plain"
 
 

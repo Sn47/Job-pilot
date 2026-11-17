@@ -138,7 +138,7 @@ export function JobDetail({ job, onChanged, onRemoved }: { job: JobFull; onChang
               <button className="btn btn-quiet btn-sm" onClick={() => tailor('resume')} disabled={!!busy}>{busy === 'rewrite-resume' ? 'Rewriting…' : 'Rewrite'}</button></>} busy={!!busy} />}>
             {editing === 'resume'
               ? <textarea className="field min-h-[560px] font-mono text-[13px]" value={resume} onChange={(e) => setResume(e.target.value)} />
-              : <div className="doc rounded-md border border-rule bg-panel p-6"><Markdown text={resume} /></div>}
+              : <div className="doc resume-sheet rounded-md border p-6 sm:p-8"><Markdown text={resume} /></div>}
             {(!!job.kit_notes.keywords_used?.length || !!job.kit_notes.gaps?.length) && (
               <div className="mt-4 grid gap-4 text-[13px] text-muted md:grid-cols-2">
                 {!!job.kit_notes.keywords_used?.length && <p><span className="text-text">Keywords used:</span> {job.kit_notes.keywords_used.join(', ')}</p>}

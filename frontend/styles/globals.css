@@ -63,12 +63,15 @@ kbd { font-family: var(--font-ui); font-size: 11px; border: 1px solid rgb(var(--
 .rise { animation: rise 160ms cubic-bezier(0.16, 1, 0.3, 1) both; }
 @media (prefers-reduced-motion: reduce) { .fit-bar, .rise { animation: none; } }
 
-/* Document surface: the only place a serif belongs. Kept light-on-dark but on a raised panel so it reads as a sheet. */
-.doc { font-family: var(--font-doc); font-size: 14.5px; line-height: 1.55; color: rgb(var(--text)); max-width: 72ch; }
-.doc h1 { font-size: 1.5rem; font-weight: 600; line-height: 1.2; margin: 0 0 .3rem; letter-spacing: -0.01em; }
-.doc h2 { font-family: var(--font-ui); font-size: .76rem; font-weight: 600; text-transform: uppercase; letter-spacing: .08em;
-          color: rgb(var(--muted)); margin: 1.3rem 0 .4rem; padding-bottom: .25rem; border-bottom: 1px solid rgb(var(--rule-2)); }
-.doc h3 { font-size: 1rem; font-weight: 600; margin: .8rem 0 .1rem; }
-.doc p { margin: .2rem 0; }
-.doc ul { margin: .25rem 0 .25rem 1.1rem; list-style: disc; }
-.doc li { margin: .12rem 0; }
+/* Resume preview uses a print-like sheet inside the dark workspace. */
+.doc { font-family: var(--font-ui); font-size: 13.5px; line-height: 1.55; max-width: 76ch; }
+.resume-sheet { background: #fcfcfa; color: #262d36; border-color: #d6dce3; box-shadow: 0 10px 28px rgb(0 0 0 / 0.16); }
+.doc h1 { color: #1f374f; font-size: 1.8rem; font-weight: 700; line-height: 1.15; margin: 0 0 .25rem; letter-spacing: -0.025em; }
+.doc h1 + p { color: #5b6673; font-size: .8rem; line-height: 1.45; margin: 0 0 1.2rem; }
+.doc h2 { color: #1f374f; font-size: .76rem; font-weight: 700; text-transform: uppercase; letter-spacing: .08em;
+          margin: 1.15rem 0 .45rem; padding-bottom: .3rem; border-bottom: 1px solid #cdd5de; }
+.doc h3 { color: #262d36; font-size: .95rem; font-weight: 700; margin: .8rem 0 .15rem; }
+.doc p { margin: .25rem 0; }
+.doc ul { margin: .35rem 0 .45rem 1.15rem; list-style: disc; }
+.resume-sheet li::marker { color: #1f374f; }
+.doc li { margin: .2rem 0; padding-left: .1rem; }
