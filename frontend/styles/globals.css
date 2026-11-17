@@ -2,48 +2,73 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Dark, warm charcoal. Thin rules, no glow, no gradients. One accent (thread gold) for fit and the
+   primary action; state colours only where they mean something. Scene: a laptop at home, evening. */
 :root {
-  color-scheme: light dark;
-  --paper: 247 248 249;
-  --surface: 255 255 255;
-  --ink: 21 25 29;
-  --muted: 95 107 118;
-  --rule: 226 230 234;
-  --go: 29 78 137;
-  --on-go: 255 255 255;
-  --stop: 167 55 43;
-  --warm: 154 106 18;
-}
-@media (prefers-color-scheme: dark) {
-  :root {
-    --paper: 20 23 27; --surface: 26 30 35; --ink: 232 234 236; --muted: 152 162 172; --rule: 39 45 51;
-    --go: 96 160 232; --on-go: 15 20 23; --stop: 229 120 107; --warm: 217 164 65;
-  }
+  color-scheme: dark;
+  --ground: 20 20 22;       /* page */
+  --panel: 27 27 30;        /* selected rows, inputs, document surface */
+  --panel-2: 36 36 40;      /* hover */
+  --text: 232 230 224;
+  --muted: 142 141 136;
+  --rule: 44 44 48;
+  --rule-2: 62 62 67;
+  --gold: 212 164 72;
+  --gold-dim: 160 122 52;
+  --good: 110 190 140;
+  --warn: 224 170 88;
+  --stop: 226 112 96;
+  --on-accent: 20 20 22;
+  --font-ui: ui-sans-serif, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-doc: "Source Serif 4", Georgia, "Times New Roman", serif;
 }
 
 html, body { height: 100%; }
 body {
-  margin: 0; background-color: rgb(var(--paper)); color: rgb(var(--ink));
-  font-family: var(--font-ui), system-ui, sans-serif; font-size: 15px; line-height: 1.5;
+  margin: 0; background-color: rgb(var(--ground)); color: rgb(var(--text));
+  font-family: var(--font-ui); font-size: 15px; line-height: 1.5; -webkit-font-smoothing: antialiased;
 }
-:focus-visible { outline: 2px solid rgb(var(--go)); outline-offset: 2px; }
-* { scrollbar-width: thin; scrollbar-color: rgb(var(--rule)) transparent; }
+::selection { background: rgb(var(--gold) / 0.35); }
+:focus-visible { outline: 2px solid rgb(var(--gold)); outline-offset: 2px; border-radius: 4px; }
+* { scrollbar-width: thin; scrollbar-color: rgb(var(--rule-2)) transparent; }
+input, textarea { caret-color: rgb(var(--gold)); }
+a { text-underline-offset: 3px; }
+.tnum { font-variant-numeric: tabular-nums; }
+kbd { font-family: var(--font-ui); font-size: 11px; border: 1px solid rgb(var(--rule-2)); border-radius: 4px; padding: 0 5px; color: rgb(var(--muted)); }
 
 @layer components {
-  .field { @apply w-full rounded-control border border-rule bg-surface px-3 py-2 text-[15px] text-ink placeholder:text-muted; }
-  .btn { @apply inline-flex min-h-[38px] items-center justify-center gap-1.5 rounded-control px-3.5 text-[14px] font-medium disabled:cursor-not-allowed disabled:opacity-50; }
-  .btn-go { @apply bg-go text-on-go hover:opacity-90; }
-  .btn-line { @apply border border-rule bg-surface text-ink hover:bg-paper; }
-  .btn-stop { @apply border border-stop text-stop hover:bg-stop/10; }
-  .btn-quiet { @apply px-2 text-muted hover:text-ink; }
-  .label { @apply mb-1 block text-[13px] font-medium text-muted; }
-  .card { @apply rounded-sheet border border-rule bg-surface; }
-  .pill { @apply inline-flex items-center rounded-full border border-rule px-2 py-0.5 text-[12px] text-muted; }
+  .field {
+    @apply w-full rounded-md border border-rule bg-panel px-3 py-2 text-[15px] text-text placeholder:text-muted/70
+           hover:border-rule-2 focus:border-gold focus:outline-none;
+  }
+  .btn {
+    @apply inline-flex min-h-[36px] items-center justify-center gap-2 rounded-md px-3.5 text-[14px] font-medium
+           transition-colors duration-150 disabled:cursor-not-allowed disabled:opacity-40;
+  }
+  .btn-primary { @apply bg-gold text-on-accent hover:bg-gold/90; }
+  .btn-line { @apply border border-rule-2 text-text hover:bg-panel-2; }
+  .btn-quiet { @apply px-2 text-muted hover:bg-panel-2 hover:text-text; }
+  .btn-sm { @apply min-h-[30px] px-2.5 text-[13px]; }
+  .label { @apply mb-1.5 block text-[13px] text-muted; }
+  .pill { @apply inline-flex h-[22px] items-center rounded-full border border-rule-2 px-2 text-[12px] leading-none text-muted; }
+  .chip { @apply inline-flex h-8 items-center gap-1 rounded-full border border-rule-2 pl-3 pr-2 text-[13px] text-text transition-colors hover:border-muted; }
+  .chip-on { @apply border-text bg-text text-on-accent; }
+  .chip-add { @apply border-dashed pr-3 text-muted hover:text-text; }
 }
 
-.prose-md h1 { font-size: 1.4rem; font-weight: 700; margin: 0 0 .25rem; }
-.prose-md h2 { font-size: 1rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; margin: 1rem 0 .25rem; border-bottom: 1px solid rgb(var(--rule)); }
-.prose-md h3 { font-size: .95rem; font-weight: 600; margin: .6rem 0 .1rem; }
-.prose-md p { margin: .2rem 0; }
-.prose-md ul { margin: .2rem 0 .2rem 1.2rem; list-style: disc; }
-.prose-md li { margin: .1rem 0; }
+/* The one authored motion: fit bars fill when a job is selected. */
+@keyframes fill { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+.fit-bar { transform-origin: left; animation: fill 320ms cubic-bezier(0.16, 1, 0.3, 1) both; }
+@keyframes rise { from { opacity: 0; transform: translateY(3px); } to { opacity: 1; transform: none; } }
+.rise { animation: rise 160ms cubic-bezier(0.16, 1, 0.3, 1) both; }
+@media (prefers-reduced-motion: reduce) { .fit-bar, .rise { animation: none; } }
+
+/* Document surface: the only place a serif belongs. Kept light-on-dark but on a raised panel so it reads as a sheet. */
+.doc { font-family: var(--font-doc); font-size: 14.5px; line-height: 1.55; color: rgb(var(--text)); max-width: 72ch; }
+.doc h1 { font-size: 1.5rem; font-weight: 600; line-height: 1.2; margin: 0 0 .3rem; letter-spacing: -0.01em; }
+.doc h2 { font-family: var(--font-ui); font-size: .76rem; font-weight: 600; text-transform: uppercase; letter-spacing: .08em;
+          color: rgb(var(--muted)); margin: 1.3rem 0 .4rem; padding-bottom: .25rem; border-bottom: 1px solid rgb(var(--rule-2)); }
+.doc h3 { font-size: 1rem; font-weight: 600; margin: .8rem 0 .1rem; }
+.doc p { margin: .2rem 0; }
+.doc ul { margin: .25rem 0 .25rem 1.1rem; list-style: disc; }
+.doc li { margin: .12rem 0; }

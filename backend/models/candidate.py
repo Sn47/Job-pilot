@@ -73,4 +73,20 @@ class Candidate(Base):
             "min_score": self.min_score,
             "answers": {**DEFAULT_ANSWERS, **(self.answers or {})},
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,
+            "setup": self.setup_state(),
+        }
+
+    def setup_state(self) -> dict:
+        """What the first-run walk still needs. `ready` means a scan can find and score jobs."""
+        has_resume = len((self.master_resume or "").strip()) >= 200
+        has_titles = bool([t for t in (self.target_titles or []) if t])
+        has_skills = bool([s for s in (self.skills or []) if s])
+        has_contact = bool(self.full_name and self.email)
+        facts = self.answers or {}
+        has_facts = bool(facts.get("years_experience") or facts.get("work_authorization"))
+        return {
+            "has_resume": has_resume, "has_titles": has_titles, "has_skills": has_skills,
+            "has_contact": has_contact, "has_facts": has_facts,
+            "ready": has_resume and has_titles,
+            "complete": has_resume and has_titles and has_skills and has_contact and has_facts,
         }

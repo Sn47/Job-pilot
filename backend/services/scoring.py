@@ -59,9 +59,12 @@ def score_job(job: dict, cand: dict) -> tuple[float, dict]:
     parts["title"] = {"points": round(3.0 * best, 2), "max": 3.0, "reasons": [reason]}
 
     # Skills overlap
-    hits = [s for s in (cand.get("skills") or []) if s and _has(hay, s)]
+    skills = [s for s in (cand.get("skills") or []) if s]
+    hits = [s for s in skills if _has(hay, s)]
+    misses = [s for s in skills if s not in hits]
     parts["skills"] = {"points": round(min(3.0, 0.5 * len(hits)), 2), "max": 3.0,
-                       "reasons": [f"{len(hits)} skills mentioned: {', '.join(hits[:8])}" if hits else "none of your skills mentioned"]}
+                       "reasons": [f"{len(hits)} skills mentioned: {', '.join(hits[:8])}" if hits else "none of your skills mentioned"],
+                       "found": hits, "missing": misses[:12]}
 
     # Preferences
     pts, why = 2.0, []
@@ -106,7 +109,8 @@ def score_job(job: dict, cand: dict) -> tuple[float, dict]:
     if posted:
         age = (datetime.now(timezone.utc) - (posted if posted.tzinfo else posted.replace(tzinfo=timezone.utc))).days
         f = 1.0 if age <= 3 else 0.7 if age <= 7 else 0.4 if age <= 14 else 0.0
-        parts["freshness"] = {"points": f, "max": 1.0, "reasons": [f"posted {age} days ago"]}
+        when = "today" if age <= 0 else "yesterday" if age == 1 else f"{age} days ago"
+        parts["freshness"] = {"points": f, "max": 1.0, "reasons": [f"posted {when}"]}
     else:
         parts["freshness"] = {"points": 0.5, "max": 1.0, "reasons": ["no date on the listing"]}
 

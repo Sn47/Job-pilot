@@ -29,5 +29,5 @@ export function Markdown({ text }: { text: string }) {
     else out.push(<p key={i}>{inline(line, i)}</p>);
   });
   flush();
-  return <div className="prose-md">{out}</div>;
+  return <>{out}</>;
 }

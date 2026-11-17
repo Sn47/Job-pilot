@@ -9,7 +9,7 @@ Sister project of Lead Pilot (same stack, different job: that one finds clients 
 1. **Scan.** Searches the free remote boards (Remotive, Remote OK, We Work Remotely, Jobicy), and optionally LinkedIn Jobs (Apify), company career pages and ATS sites (Exa), and Upwork (official API) for your target titles.
 2. **Score.** Each posting gets 0–10 against your profile: title match, your skills in the description, your preferences (remote, contract vs full-time, salary floor, countries), freshness, level. Postings outside your rules are saved as *skipped* with the reason, never lost.
 3. **Tailor.** One click builds the apply kit with the LLM: a resume rewritten for that posting (reordered and reworded from your master resume, never invented; a guard flags any number that is not in the master), a cover letter under 220 words, and drafted answers to the usual form questions. PDF, DOCX and Markdown downloads.
-4. **Apply.** Open the posting, upload the PDF, paste the answers, mark it applied. The Tracker page follows applied → interview → offer / rejected.
+4. **Apply.** Open the posting, upload the PDF, paste the answers, mark it applied. The same list follows it through applied → interview → offer / rejected.
 
 ## Run it
 
@@ -18,7 +18,7 @@ cp .env.example .env     # add OPENCODE_API_KEY (or OPENAI / GEMINI / any OpenAI
 ./start-mac.sh           # backend on :8001, dashboard on :3001
 ```
 
-Then on **Profile & resume**: import your resume (PDF/DOCX → cleaned Markdown via the LLM, or raw text without one), set target titles, skills and preferences, fill the "facts for application forms". On **Scan & settings** press *Run scan now*.
+Then follow the four-step set-up it opens with (resume → titles and skills → rules → first scan). After that it's two pages: **Jobs** (find, review the fit, tailor, apply, track through the stages) and **Profile**.
 
 Manual start: `cd backend && python -m uvicorn main:app --port 8001 --reload` and `cd frontend && npm run dev`.
 
@@ -52,7 +52,7 @@ backend/
   routers/jobs.py           # /api/jobs: list, stats, scan, last-run, status, tailor, kit edits, downloads
   routers/candidate.py      # /api/candidate: profile, resume upload, estimate, status
 frontend/pages/
-  index.tsx (queue + job detail + kit), tracker.tsx, profile.tsx, settings.tsx
+  index.tsx (jobs: stages, scan, list + detail with the review → tailor → apply path), profile.tsx, setup.tsx
 ```
 
 Status lifecycle: `new` → `saved` / `tailored` → `applied` → `interview` → `offer` | `rejected`; anything can be `skipped`.

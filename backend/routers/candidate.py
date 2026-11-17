@@ -86,6 +86,22 @@ async def upload_resume(file: UploadFile = File(...), convert: bool = True, db: 
     return result
 
 
+@router.get("/suggestions")
+async def suggestions(db: AsyncSession = Depends(get_db)):
+    """Title and skill chips derived from the master resume (no LLM), for the setup walk."""
+    try:
+        from ..services import suggest
+    except ImportError:
+        from services import suggest  # type: ignore
+    c = await pipeline.get_candidate(db)
+    titles = suggest.titles_from_resume(c.master_resume)
+    return {
+        "titles": titles,
+        "related_titles": suggest.related_titles(titles or c.target_titles or []),
+        "skills": suggest.skills_from_resume(c.master_resume),
+    }
+
+
 @router.get("/estimate")
 async def estimate(db: AsyncSession = Depends(get_db)):
     return pipeline.estimate((await pipeline.get_candidate(db)).to_dict())

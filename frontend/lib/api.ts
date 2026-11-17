@@ -15,7 +15,7 @@ function qs(params?: object): string {
   return entries.length ? '?' + new URLSearchParams(entries.map(([k, v]) => [k, String(v)])).toString() : '';
 }
 
-export interface ScorePart { points: number; max: number; reasons: string[] }
+export interface ScorePart { points: number; max: number; reasons: string[]; found?: string[]; missing?: string[] }
 export interface ScoreBreakdown { total?: number; hard_skip?: string; [k: string]: ScorePart | number | string | undefined }
 
 export interface Job {
@@ -36,7 +36,9 @@ export interface Candidate {
   id: number; full_name: string; email: string; phone: string; location: string; linkedin_url: string; github_url: string;
   portfolio_url: string; master_resume: string; skills: string[]; target_titles: string[]; keywords: string[];
   exclude_keywords: string[]; preferences: Preferences; min_score: number; answers: Record<string, string>; updated_at: string | null;
+  setup: { has_resume: boolean; has_titles: boolean; has_skills: boolean; has_contact: boolean; has_facts: boolean; ready: boolean; complete: boolean };
 }
+export interface Suggestions { titles: string[]; related_titles: string[]; skills: string[] }
 export interface LastRun {
   status: string; started_at: string | null; finished_at: string | null; raw: number; new: number; updated: number;
   skipped: number; duplicates: number; tailored: number; sources: Record<string, number>; errors: string[];
@@ -66,6 +68,7 @@ export const api = {
     get: () => request<Candidate>('/candidate'),
     update: (body: Partial<Candidate>) => request<Candidate>('/candidate', { method: 'PUT', body: JSON.stringify(body) }),
     estimate: () => request<Estimate>('/candidate/estimate'),
+    suggestions: () => request<Suggestions>('/candidate/suggestions'),
     status: () => request<SystemStatus>('/candidate/status'),
     upload: async (file: File, convert: boolean) => {
       const fd = new FormData();

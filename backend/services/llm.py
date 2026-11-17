@@ -41,24 +41,29 @@ def _key_for(name: str) -> Optional[str]:
     }.get(name)
 
 
-def provider() -> Optional[str]:
+def available() -> list[str]:
+    """Configured providers in preference order. LLM_PROVIDER puts one first (and alone if it is the only one)."""
     forced = (_settings().LLM_PROVIDER or "").strip().lower()
     forced = _ALIASES.get(forced, forced)
-    if forced in PROVIDERS:
-        return forced if _key_for(forced) else None
-    for name in PROVIDERS:
-        if _key_for(name):
-            return name
-    return None
+    names = [n for n in PROVIDERS if _key_for(n)]
+    if forced in names:
+        names.remove(forced)
+        names.insert(0, forced)
+    return names
+
+
+def provider() -> Optional[str]:
+    names = available()
+    return names[0] if names else None
 
 
 def configured() -> bool:
     return provider() is not None
 
 
-def model_name() -> str:
+def model_name(p: Optional[str] = None) -> str:
     s = _settings()
-    p = provider()
+    p = p or provider()
     if p == "opencode":
         return s.OPENCODE_MODEL
     if p == "openai":
@@ -68,9 +73,9 @@ def model_name() -> str:
     return s.GEMINI_MODEL
 
 
-def _client_kwargs() -> dict:
+def _client_kwargs(p: Optional[str] = None) -> dict:
     s = _settings()
-    p = provider()
+    p = p or provider()
     if p == "opencode":
         return {"api_key": s.OPENCODE_API_KEY, "base_url": OPENCODE_BASE_URL}
     if p == "custom":
@@ -80,13 +85,13 @@ def _client_kwargs() -> dict:
     return {"api_key": s.OPENAI_API_KEY}
 
 
-def sync_client():
+def sync_client(p: Optional[str] = None):
     from openai import OpenAI
-    return OpenAI(**_client_kwargs())
+    return OpenAI(max_retries=1, **_client_kwargs(p))
 
 
-def token_kwargs(n: int) -> dict:
-    p = provider()
+def token_kwargs(n: int, p: Optional[str] = None) -> dict:
+    p = p or provider()
     if p == "openai":
         return {"max_completion_tokens": n}
     if p == "custom":
@@ -95,19 +100,33 @@ def token_kwargs(n: int) -> dict:
 
 
 def describe() -> str:
-    p = provider()
-    return f"{p}:{model_name()}" if p else "none"
+    names = available()
+    if not names:
+        return "none"
+    return " → ".join(f"{p}:{model_name(p)}" for p in names)
 
 
 async def complete(prompt: str, system: str = "", max_tokens: int = 3000) -> str:
-    """One chat completion, run in a thread so the event loop stays free."""
-    client = sync_client()
+    """One chat completion. Tries each configured provider in order; the first that answers wins.
+    Runs in a thread so the event loop stays free."""
     messages = ([{"role": "system", "content": system}] if system else []) + [{"role": "user", "content": prompt}]
-    response = await asyncio.to_thread(
-        client.chat.completions.create,
-        model=model_name(), messages=messages, **token_kwargs(max_tokens),
-    )
-    return (response.choices[0].message.content or "").strip()
+    errors = []
+    for p in available():
+        try:
+            client = sync_client(p)
+            response = await asyncio.to_thread(
+                client.chat.completions.create,
+                model=model_name(p), messages=messages, **token_kwargs(max_tokens, p),
+            )
+            text = (response.choices[0].message.content or "").strip()
+            if text:
+                return text
+            errors.append(f"{p}: empty reply")
+        except Exception as e:
+            msg = str(e)
+            errors.append(f"{p}:{model_name(p)}: {msg[:300]}")
+            logger.warning(f"LLM {p} failed, trying the next provider: {msg[:300]}")
+    raise RuntimeError("Every LLM provider failed — " + " | ".join(errors) if errors else "No LLM provider configured")
 
 
 _FENCE = re.compile(r"```(?:json)?\s*(.*?)```", re.S)
