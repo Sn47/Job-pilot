@@ -1,0 +1,49 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light dark;
+  --paper: 247 248 249;
+  --surface: 255 255 255;
+  --ink: 21 25 29;
+  --muted: 95 107 118;
+  --rule: 226 230 234;
+  --go: 29 78 137;
+  --on-go: 255 255 255;
+  --stop: 167 55 43;
+  --warm: 154 106 18;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --paper: 20 23 27; --surface: 26 30 35; --ink: 232 234 236; --muted: 152 162 172; --rule: 39 45 51;
+    --go: 96 160 232; --on-go: 15 20 23; --stop: 229 120 107; --warm: 217 164 65;
+  }
+}
+
+html, body { height: 100%; }
+body {
+  margin: 0; background-color: rgb(var(--paper)); color: rgb(var(--ink));
+  font-family: var(--font-ui), system-ui, sans-serif; font-size: 15px; line-height: 1.5;
+}
+:focus-visible { outline: 2px solid rgb(var(--go)); outline-offset: 2px; }
+* { scrollbar-width: thin; scrollbar-color: rgb(var(--rule)) transparent; }
+
+@layer components {
+  .field { @apply w-full rounded-control border border-rule bg-surface px-3 py-2 text-[15px] text-ink placeholder:text-muted; }
+  .btn { @apply inline-flex min-h-[38px] items-center justify-center gap-1.5 rounded-control px-3.5 text-[14px] font-medium disabled:cursor-not-allowed disabled:opacity-50; }
+  .btn-go { @apply bg-go text-on-go hover:opacity-90; }
+  .btn-line { @apply border border-rule bg-surface text-ink hover:bg-paper; }
+  .btn-stop { @apply border border-stop text-stop hover:bg-stop/10; }
+  .btn-quiet { @apply px-2 text-muted hover:text-ink; }
+  .label { @apply mb-1 block text-[13px] font-medium text-muted; }
+  .card { @apply rounded-sheet border border-rule bg-surface; }
+  .pill { @apply inline-flex items-center rounded-full border border-rule px-2 py-0.5 text-[12px] text-muted; }
+}
+
+.prose-md h1 { font-size: 1.4rem; font-weight: 700; margin: 0 0 .25rem; }
+.prose-md h2 { font-size: 1rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; margin: 1rem 0 .25rem; border-bottom: 1px solid rgb(var(--rule)); }
+.prose-md h3 { font-size: .95rem; font-weight: 600; margin: .6rem 0 .1rem; }
+.prose-md p { margin: .2rem 0; }
+.prose-md ul { margin: .2rem 0 .2rem 1.2rem; list-style: disc; }
+.prose-md li { margin: .1rem 0; }

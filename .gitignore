@@ -1,0 +1,13 @@
+.env
+*.db
+*.db-journal
+backend/.venv/
+backend/files/
+__pycache__/
+*.pyc
+.pytest_cache/
+frontend/node_modules/
+frontend/.next/
+frontend/.env.local
+frontend/tsconfig.tsbuildinfo
+.DS_Store
