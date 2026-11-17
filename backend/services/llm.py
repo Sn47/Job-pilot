@@ -118,10 +118,26 @@ async def complete(prompt: str, system: str = "", max_tokens: int = 3000) -> str
                 client.chat.completions.create,
                 model=model_name(p), messages=messages, **token_kwargs(max_tokens, p),
             )
-            text = (response.choices[0].message.content or "").strip()
+            if not response.choices:
+                errors.append(f"{p}:{model_name(p)}: empty response (no choices)")
+                logger.warning("LLM %s:%s returned no choices", p, model_name(p))
+                continue
+            choice = response.choices[0]
+            message = choice.message
+            content = message.content
+            text = content.strip() if isinstance(content, str) else ""
             if text:
                 return text
-            errors.append(f"{p}: empty reply")
+            finish_reason = getattr(choice, "finish_reason", None) or "unknown"
+            refusal_present = bool(getattr(message, "refusal", None))
+            tool_calls = len(getattr(message, "tool_calls", None) or [])
+            content_type = type(content).__name__
+            details = (
+                f"finish_reason={finish_reason}, refusal={refusal_present}, "
+                f"tool_calls={tool_calls}, content_type={content_type}"
+            )
+            errors.append(f"{p}:{model_name(p)}: empty reply ({details})")
+            logger.warning("LLM %s:%s returned empty content (%s)", p, model_name(p), details)
         except Exception as e:
             msg = str(e)
             errors.append(f"{p}:{model_name(p)}: {msg[:300]}")
@@ -132,18 +148,53 @@ async def complete(prompt: str, system: str = "", max_tokens: int = 3000) -> str
 _FENCE = re.compile(r"```(?:json)?\s*(.*?)```", re.S)
 
 
+def _loads(s: str):
+    try:
+        return json.loads(s)
+    except json.JSONDecodeError:
+        pass
+    # Models often put real newlines inside JSON strings; json.loads rejects those.
+    out, in_str, esc = [], False, False
+    for ch in s:
+        if in_str:
+            if esc:
+                out.append(ch)
+                esc = False
+            elif ch == "\\":
+                out.append(ch)
+                esc = True
+            elif ch == '"':
+                out.append(ch)
+                in_str = False
+            elif ch == "\n":
+                out.append("\\n")
+            elif ch == "\r":
+                out.append("\\r")
+            elif ch == "\t":
+                out.append("\\t")
+            elif ord(ch) < 32:
+                continue
+            else:
+                out.append(ch)
+        else:
+            if ch == '"':
+                in_str = True
+            out.append(ch)
+    return json.loads("".join(out))
+
+
 def parse_json(text: str) -> Optional[dict]:
     """Pull a JSON object out of a reply that may wrap it in a code fence or prose."""
-    candidates = [m.group(1) for m in _FENCE.finditer(text)] + [text]
+    candidates = [m.group(1) for m in _FENCE.finditer(text or "")] + [text or ""]
     for c in candidates:
         c = c.strip()
         start, end = c.find("{"), c.rfind("}")
         if start == -1 or end == -1:
             continue
         try:
-            obj = json.loads(c[start:end + 1])
+            obj = _loads(c[start:end + 1])
             if isinstance(obj, dict):
                 return obj
-        except json.JSONDecodeError:
+        except (json.JSONDecodeError, ValueError):
             continue
     return None

@@ -1,3 +1,4 @@
+import logging
 from typing import Optional
 
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
@@ -14,6 +15,7 @@ except ImportError:
     from services import documents, llm, pipeline, tailor  # type: ignore
 
 router = APIRouter(prefix="/api/candidate", tags=["candidate"])
+logger = logging.getLogger(__name__)
 
 
 class CandidateBody(BaseModel):
@@ -56,24 +58,23 @@ async def upload_resume(file: UploadFile = File(...), convert: bool = True, db: 
     """Upload a .pdf/.docx/.md/.txt resume. With convert=true (needs an LLM) it becomes the master
     resume in clean Markdown and fills name/contact/skills; otherwise the raw text is stored as is."""
     data = await file.read()
-    if len(data) > 5_000_000:
-        raise HTTPException(413, "File too large (5 MB max)")
     try:
         raw = documents.extract_text(file.filename or "", data)
     except Exception as e:
         raise HTTPException(400, f"Could not read the file: {e}")
-    if len(raw.strip()) < 100:
-        raise HTTPException(400, "The file has almost no text (is it a scanned image?)")
+    if not raw.strip():
+        raise HTTPException(400, "The file has no extractable text (is it a scanned image?)")
     c = await pipeline.get_candidate(db)
     result = {"converted": False, "chars": len(raw)}
     if convert and llm.configured():
         try:
             parsed = await tailor.import_resume(raw)
         except Exception as e:
+            logger.exception("Resume conversion failed")
             raise HTTPException(502, f"Conversion failed: {e}")
         c.master_resume = parsed["resume_md"]
         if parsed.get("skills") and not c.skills:
-            c.skills = [str(s) for s in parsed["skills"]][:60]
+            c.skills = [str(s) for s in parsed["skills"]]
         for f in ("full_name", "email", "phone", "location", "linkedin_url", "github_url"):
             if parsed.get(f) and not getattr(c, f):
                 setattr(c, f, str(parsed[f])[:300])

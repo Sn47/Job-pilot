@@ -9,18 +9,18 @@ try:
     from . import scheduler
     from .auth import require_token
     from .config import settings
-    from .database import Base, engine
+    from .database import AsyncSessionFactory, Base, engine
     from .routers import candidate, jobs
     from .services import llm
-    from .services.pipeline import sources_enabled
+    from .services.pipeline import get_candidate, sources_enabled
 except ImportError:
     import scheduler  # type: ignore
     from auth import require_token  # type: ignore
     from config import settings  # type: ignore
-    from database import Base, engine  # type: ignore
+    from database import AsyncSessionFactory, Base, engine  # type: ignore
     from routers import candidate, jobs  # type: ignore
     from services import llm  # type: ignore
-    from services.pipeline import sources_enabled  # type: ignore
+    from services.pipeline import get_candidate, sources_enabled  # type: ignore
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
 logger = logging.getLogger("jobpilot")
@@ -30,6 +30,8 @@ logger = logging.getLogger("jobpilot")
 async def lifespan(app: FastAPI):
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+    async with AsyncSessionFactory() as db:
+        await get_candidate(db)
     logger.info(f"Sources: {', '.join(sources_enabled({})) or 'none'} | writer: {llm.describe()}")
     if not settings.API_TOKEN:
         logger.warning("API_TOKEN is empty: auth is off (fine locally)")

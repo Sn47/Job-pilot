@@ -1,7 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 
 // The browser never sees API_TOKEN: this route adds it server-side and forwards to the backend.
-export const config = { api: { bodyParser: false, responseLimit: false } };
+export const config = { api: { bodyParser: false, responseLimit: false, sizeLimit: '500mb' } };
 
 function readBody(req: NextApiRequest): Promise<Buffer> {
   return new Promise((resolve, reject) => {

@@ -5,6 +5,7 @@ from datetime import datetime, timedelta, timezone
 from typing import Optional
 
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 
 try:
     from ..config import settings
@@ -35,10 +36,18 @@ _lock = asyncio.Lock()
 
 async def get_candidate(db) -> Candidate:
     c = await db.get(Candidate, 1)
-    if c is None:
-        c = Candidate(id=1)
-        db.add(c)
+    if c is not None:
+        return c
+    # Singleton row. The dashboard hits several /api/candidate* routes at once on first
+    # load, so two sessions can both miss the row and try to insert id=1.
+    db.add(Candidate(id=1))
+    try:
         await db.commit()
+    except IntegrityError:
+        await db.rollback()
+    c = await db.get(Candidate, 1)
+    if c is None:
+        raise RuntimeError("candidate row id=1 could not be loaded or created")
     return c
 
 

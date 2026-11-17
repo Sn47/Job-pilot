@@ -1,3 +1,4 @@
+import logging
 from datetime import datetime, timezone
 from typing import Optional
 
@@ -18,6 +19,7 @@ except ImportError:
     from services import documents, pipeline  # type: ignore
 
 router = APIRouter(prefix="/api/jobs", tags=["jobs"])
+logger = logging.getLogger(__name__)
 
 
 class KitPatch(BaseModel):
@@ -103,6 +105,7 @@ async def tailor(job_id: int, parts: str = "resume,cover,answers", db: AsyncSess
     try:
         job = await pipeline.build_kit(db, job, parts=wanted)
     except Exception as e:
+        logger.exception("Apply kit generation failed for job %s", job_id)
         raise HTTPException(502, str(e))
     return job.to_dict()
 

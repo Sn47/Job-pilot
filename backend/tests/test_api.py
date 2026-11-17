@@ -84,8 +84,8 @@ async def test_tailor_builds_kit_and_exports(client, monkeypatch):
 
     async def fake_complete(prompt, system="", max_tokens=0):
         calls.append(prompt[:40])
-        if "Return JSON only:\n{\"resume_md\"" in prompt:
-            return '```json\n{"resume_md": "# Jane Doe\\n## Summary\\nPower BI analyst, cut reporting time 40%", "matched_skills": ["sql"], "gaps": ["tableau"], "keywords_used": ["Power BI"]}\n```'
+        if "Write the tailored version of the resume" in prompt:
+            return '# Jane Doe\n## Summary\nPower BI analyst, cut reporting time 40%\n---JSON---\n{"matched_skills": ["sql"], "gaps": ["tableau"], "keywords_used": ["Power BI"]}'
         if "cover letter" in prompt:
             return "Dear Acme, ...\nJane Doe"
         return '{"answers": {"Why do you want this role?": "Because dashboards.", "Salary expectation": "[fill in]"}}'

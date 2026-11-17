@@ -62,3 +62,55 @@ def test_invention_guard():
     assert tailor.check_no_invention(master, "- Grew revenue 40% in 2021\n- Team of 6") == []
     issues = tailor.check_no_invention(master, "- Grew revenue 75% in 2019")
     assert any("75%" in i for i in issues) and any("2019" in i for i in issues)
+
+
+def test_parse_json_accepts_raw_newlines_in_strings():
+    from services import llm
+    raw = '{"resume_md": "line1\nline2", "skills": ["sql"]}'
+    assert llm.parse_json(raw) == {"resume_md": "line1\nline2", "skills": ["sql"]}
+
+
+def test_prompt_fill_preserves_braces_in_values_and_templates():
+    prompt = tailor._fill('Resume: {master}\nTitle: {title}\n{"answers": {...}}',
+                          master="Role: {title}", title="Analyst")
+    assert "Resume: Role: {title}" in prompt
+    assert "Title: Analyst" in prompt
+    assert '{"answers": {...}}' in prompt
+
+
+async def test_tailor_resume_parses_markdown_and_metadata(monkeypatch):
+    async def fake_complete(prompt, system="", max_tokens=0):
+        assert "Candidate master resume" in prompt
+        return '# Jane Doe\n## Summary\nAnalyst with 5 years\n---JSON---\n{"matched_skills": ["sql"], "gaps": ["tableau"], "keywords_used": ["analytics"]}'
+
+    monkeypatch.setattr(tailor.llm, "complete", fake_complete)
+    result = await tailor.tailor_resume(
+        "Jane Doe\n5 years", ["sql"],
+        {"title": "Analyst", "company": "Acme", "description": "Analytics"},
+    )
+    assert result["resume_md"].startswith("# Jane Doe")
+    assert result["gaps"] == ["tableau"]
+
+
+def test_parse_imported_resume_markdown_then_json():
+    text = "# Jane Doe\n\n## Skills\nSQL\n---JSON---\n{\"full_name\": \"Jane Doe\", \"skills\": [\"sql\"]}"
+    data = tailor.parse_imported_resume(text)
+    assert data["resume_md"].startswith("# Jane Doe") and data["full_name"] == "Jane Doe" and data["skills"] == ["sql"]
+
+
+def test_parse_imported_resume_legacy_json():
+    text = '```json\n{"resume_md": "# Jane\\n## Summary\\nAnalyst", "skills": ["sql"]}\n```'
+    assert tailor.parse_imported_resume(text)["resume_md"].startswith("# Jane")
+
+
+def test_resume_chunks_cover_the_whole_file():
+    raw = ("para\n\n" * 5000)
+    parts = tailor._resume_chunks(raw)
+    assert sum(len(p) for p in parts) >= len(raw) - 20
+    assert len(parts) > 1
+    merged = tailor._merge_import([
+        {"resume_md": "# A\nexp 1", "skills": ["sql"], "full_name": "Jane"},
+        {"resume_md": "exp 2", "skills": ["SQL", "python"]},
+    ])
+    assert "exp 1" in merged["resume_md"] and "exp 2" in merged["resume_md"]
+    assert merged["skills"] == ["sql", "python"] and merged["full_name"] == "Jane"
